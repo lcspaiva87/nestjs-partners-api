@@ -55,38 +55,43 @@ export class EventsService {
     }
 
     try {
-      const tickets = this.prismaService.$transaction(async (prisma) => {
-        prisma.reservationHistory.createMany({
-          data: spots.map((spot) => ({
-            spotId: spot.id,
-            email: dto.email,
-            ticketKind: dto.ticket_kind,
-            status: TicketStatus.reserved,
-          })),
-        });
-        await prisma.spot.updateMany({
-          where: {
-            id: {
-              in: spots.map((spot) => spot.id),
-            },
-          },
-          data: {
-            status: TicketStatus.reserved,
-          },
-        });
-        const tickets = await Promise.all(
-          spots.map((spot) => {
-            prisma.ticket.create({
-              data: {
-                spotId: spot.id,
-                email: dto.email,
-                ticketKind: dto.ticket_kind,
+      const tickets = this.prismaService.$transaction(
+        async (prisma) => {
+          prisma.reservationHistory.createMany({
+            data: spots.map((spot) => ({
+              spotId: spot.id,
+              email: dto.email,
+              ticketKind: dto.ticket_kind,
+              status: TicketStatus.reserved,
+            })),
+          });
+          await prisma.spot.updateMany({
+            where: {
+              id: {
+                in: spots.map((spot) => spot.id),
               },
-            });
-          }),
-        );
-        return tickets;
-      });
+            },
+            data: {
+              status: TicketStatus.reserved,
+            },
+          });
+          const tickets = await Promise.all(
+            spots.map((spot) => {
+              prisma.ticket.create({
+                data: {
+                  spotId: spot.id,
+                  email: dto.email,
+                  ticketKind: dto.ticket_kind,
+                },
+              });
+            }),
+          );
+          return tickets;
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        },
+      );
       return tickets;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
