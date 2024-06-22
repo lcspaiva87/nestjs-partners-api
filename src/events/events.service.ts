@@ -53,35 +53,37 @@ export class EventsService {
       );
       throw new Error(`Spots not found: ${notFoundSpotsName.join(', ')}`);
     }
-    this.prismaService.reservationHistory.createMany({
-      data: spots.map((spot) => ({
-        spotId: spot.id,
-        email: dto.email,
-        ticketKind: dto.ticket_kind,
-        status: TicketStatus.reserved,
-      })),
-    });
-    await this.prismaService.spot.updateMany({
-      where: {
-        id: {
-          in: spots.map((spot) => spot.id),
-        },
-      },
-      data: {
-        status: TicketStatus.reserved,
-      },
-    });
-    const tickets = await Promise.all(
-      spots.map((spot) => {
-        this.prismaService.ticket.create({
-          data: {
-            spotId: spot.id,
-            email: dto.email,
-            ticketKind: dto.ticket_kind,
+    this.prismaService.$transaction(async (prisma) => {
+      prisma.reservationHistory.createMany({
+        data: spots.map((spot) => ({
+          spotId: spot.id,
+          email: dto.email,
+          ticketKind: dto.ticket_kind,
+          status: TicketStatus.reserved,
+        })),
+      });
+      await prisma.spot.updateMany({
+        where: {
+          id: {
+            in: spots.map((spot) => spot.id),
           },
-        });
-      }),
-    );
-    return tickets;
+        },
+        data: {
+          status: TicketStatus.reserved,
+        },
+      });
+      const tickets = await Promise.all(
+        spots.map((spot) => {
+          prisma.ticket.create({
+            data: {
+              spotId: spot.id,
+              email: dto.email,
+              ticketKind: dto.ticket_kind,
+            },
+          });
+        }),
+      );
+      return tickets;
+    });
   }
 }
