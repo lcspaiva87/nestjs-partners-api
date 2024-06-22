@@ -1,4 +1,11 @@
 services:
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/home/node/app
+
   db:
     image: mysql:5.7
     environment:
@@ -8,3 +15,5 @@ services:
       MYSQL_PASSWORD:
     ports:
       - '3306:3306'
+    volumes:
+      - ./docker/dbdata:/var/lib/mysql
