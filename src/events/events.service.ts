@@ -61,5 +61,27 @@ export class EventsService {
         status: TicketStatus.reserved,
       })),
     });
+    await this.prismaService.spot.updateMany({
+      where: {
+        id: {
+          in: spots.map((spot) => spot.id),
+        },
+      },
+      data: {
+        status: TicketStatus.reserved,
+      },
+    });
+    const tickets = await Promise.all(
+      spots.map((spot) => {
+        this.prismaService.ticket.create({
+          data: {
+            spotId: spot.id,
+            email: dto.email,
+            ticketKind: dto.ticket_kind,
+          },
+        });
+      }),
+    );
+    return tickets;
   }
 }
