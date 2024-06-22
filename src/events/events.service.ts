@@ -1,12 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Post } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
-
-@
 @Injectable()
 export class EventsService {
   constructor(private prismaService: PrismaService) {}
+  @Post()
   async create(createEventDto: CreateEventDto) {
     return await this.prismaService.event.create({
       data: createEventDto,
@@ -14,18 +13,25 @@ export class EventsService {
   }
 
   findAll() {
-    return `This action returns all events`;
+    return this.prismaService.event.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} event`;
+  findOne(id: string) {
+    return this.prismaService.event.findUnique({
+      where: { id },
+    });
   }
 
-  update(id: number) {
-    return `This action updates a #${id} event`;
+  update(id: string) {
+    return this.prismaService.event.update({
+      where: { id },
+      data: { name: 'updated name' },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} event`;
+  remove(id: string) {
+    return this.prismaService.event.delete({
+      where: { id },
+    });
   }
 }
